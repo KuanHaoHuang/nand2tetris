@@ -1,0 +1,99 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/Memory.hdl
+
+/**
+ * The complete address space of the Hack computer's memory,
+ * including RAM and memory-mapped I/O. 
+ * The chip facilitates read and write operations, as follows:
+ *     Read:  out(t) = Memory[address(t)](t)
+ *     Write: if load(t-1) then Memory[address(t-1)](t) = in(t-1)
+ * In words: the chip always outputs the value stored at the memory 
+ * location specified by address. If load==1, the in value is loaded 
+ * into the memory location specified by address. This value becomes 
+ * available through the out output from the next time step onward.
+ * Address space rules:
+ * Only the upper 16K+8K+1 words of the Memory chip are used. 
+ * Access to address>0x6000 is invalid. Access to any address in 
+ * the range 0x4000-0x5FFF results in accessing the screen memory 
+ * map. Access to address 0x6000 results in accessing the keyboard 
+ * memory map. The behavior in these addresses is described in the 
+ * Screen and Keyboard chip specifications given in the book.
+ */
+
+CHIP Memory {
+    IN in[16], load, address[15];
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+    // make -16384
+    Or16(a=false, b[14]=true, out=pos16384);
+    Not16(in=pos16384, out=flipPos16384);
+    Add16(a=flipPos16384, b[0]=true, out[0..14]=neg16384);
+    // make +8K
+    Or16(a=false, b[13]=true, out=pos8192);
+    // make -8K
+    Not16(in=pos8192, out=flipPos8192);
+    Add16(a=flipPos8192, b[0]=true, out[0..14]=neg8192);
+    //make -24576
+    Add16(a[0..14]=neg16384, b[0..14]=neg8192, out[0..14]=neg24576tmp);
+    Or16(a[15]=true, b[0..14]=neg24576tmp, out=neg24576);
+
+    Or16(a[0..14]=address, 
+         b[0..14]=address,
+         out[14]=addr14,
+         out[13]=addr13,
+         out[0..14]=addr014,
+         out[0..13]=addr013,
+         out[0..7]=addr07,
+         out[8..12]=addr812);
+    
+    // invalid case
+    Or16(a[0..14]=address, b[15]=false, out=addr016);
+    Add16(a=addr016, b=neg24576, out[15]=isVALtmp,
+          out[0..7]=checkAll0a,
+          out[8..15]=checkAll0b);
+    Or8Way(in=checkAll0a, out=tmpOra);
+    Or8Way(in=checkAll0b, out=tmpOrb);
+    Or(a=tmpOra, b=tmpOrb, out=tmpOrab);
+    Not(in=tmpOrab, out=notTmpOrab);
+    Or(a=isVALtmp, b=notTmpOrab, out=isVAL);
+    Not(in=isVAL, out=isINVAL);
+
+    // KB case
+    Add16(a[0..14]=address, b[0..14]=neg24576tmp, 
+          out[0..7]=shouldBeAll0a,
+          out[8..14]=shouldBeAll0b,
+          out[15]=shouldBe1);
+    Or8Way(in=shouldBeAll0a, out=orA);
+    Or8Way(in[0..6]=shouldBeAll0b, out=orB);
+    Or(a=orA, b=orB, out=orAB);
+    Not(in=orAB, out=isAll0);
+    And(a=shouldBe1, b=isAll0, out=isKB);
+    Keyboard(out=kbOut);
+    
+    // SCREEN case
+    Not(in=isKB, out=isNotKB);
+    And(a=isNotKB, b=isVAL, out=isNotKBAndIsVAL);
+    And(a=addr14, b=isNotKBAndIsVAL, out=isSCRN);
+    And(a=isSCRN, b=load, out=scrnLoad);
+    Add16(a[0..14]=addr014, b[0..14]=neg16384, 
+          out[0..12]=addressMin16384);
+    Screen(in=in, address=addressMin16384, load=scrnLoad, out=scrnOut);
+    
+    // RAM16K case
+    Not(in=addr14, out=isRAM);
+    And(a=isRAM, b=load, out=ramLoad);
+    RAM16K(in=in, address=addr013, load=ramLoad, out=ramOut);
+
+    // select case
+    And16(a=false, b=true, out=tmpOut1);
+    Or16(a=false, b[3]=true, out=testOut);
+    Mux16(a=tmpOut1, b=scrnOut, sel=isSCRN, out=tmpOut2);
+    Mux16(a=tmpOut2, b=kbOut, sel=isKB, out=tmpOut3);
+    Mux16(a=tmpOut3, b=ramOut, sel=isRAM, out=tmpOut4);
+    Mux16(a=tmpOut4, b=tmpOut1, sel=isINVAL, out=out);
+
+}
