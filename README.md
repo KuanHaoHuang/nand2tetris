@@ -4,7 +4,7 @@
 
 # Build a Modern Computer from First Principles: Nand to Tetris
 ## Summary
-Having been a data analyst for a while, even though I always play around programming languages like R or Python3, I found that I could not entitle myself computer "scientist" if I don't know how a computer works with only 0 and 1. Therefore, I started the journey of Nand2Tetris course on Coursera. It took me **4 months** to finish both part 1 and 2 of the course (with one month taking off). It's difficult to me, but it's totally worth it. Now, I know what I need to make a CPU, how virtual machines and os handle the memory allocation, and what on earth does "stack-overflow" mean!
+Having been a data analyst for a while, even though I always play around programming languages like R or Python3, I found that I could not entitle myself computer "scientist" if I don't know how a computer works with only 0 and 1. Therefore, I started the journey of Nand2Tetris course on Coursera. It took me **4 months** to finish both part 1 and 2 of the course (with one month taking off and project 9 skipped). It's difficult to me, but it's totally worth it. Now, I know what I need to make a CPU, how virtual machines and os handle the memory allocation, and what on earth "stack-overflow" means!
 
 ### my_project
 - Only the HDL, assembly, VM, and Jack language codes **written by myself** are included
